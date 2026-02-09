@@ -39,27 +39,79 @@ pip3 install -r requirements.txt
 python3 main.py
 ```
 
-## First-Time Authentication
+## Authentication Methods
 
-On first launch, a **setup wizard** opens in your browser with two options:
+Pangolin needs your Claude session cookie to fetch usage data. Choose the method that works best for you:
 
-### Option A: One-Click Bookmarklet (easiest)
-1. Drag the **"Get Claude Cookie"** button to your Bookmarks Bar.
-2. Go to [claude.ai](https://claude.ai) and make sure you're logged in.
-3. Click the bookmarklet. Done — the cookie is sent and validated automatically.
+### Method 1: Browser Setup Wizard (Recommended for Safari/Chrome)
 
-### Option B: Paste Manually
-1. Go to [claude.ai](https://claude.ai) and log in.
-2. Open DevTools (`Cmd + Option + I`) → **Console** tab.
-3. Type `copy(document.cookie)` and press Enter — this copies cookies to your clipboard.
-4. Paste into the setup page's text box and click **Validate & Save**.
+On first launch, a **setup wizard** opens in your browser:
 
-The cookie is validated against claude.ai immediately, then stored securely in your macOS Keychain. It is **never** written to disk or logged.
+**Option A: One-Click Bookmarklet**
+1. Drag the **"Get Claude Cookie"** button to your Bookmarks Bar
+2. Go to [claude.ai](https://claude.ai) and log in
+3. Click the bookmarklet → Done! Cookie is automatically extracted and validated
 
-### Re-authenticate later
-- From the menu bar: **Preferences → Re-authenticate** (opens the browser wizard)
-- From the terminal: `python3 main.py --setup`
-- Terminal-only mode (no browser): `python3 main.py --setup --cli`
+**Option B: Manual Copy-Paste**
+1. Open [claude.ai](https://claude.ai) and log in
+2. Press `Cmd + Option + I` → **Console** tab
+3. Type: `copy(document.cookie)` and press Enter
+4. Paste into the setup page → **Validate & Save**
+
+**To launch the wizard:**
+- First run: Automatic
+- Re-authenticate: Menu bar → **Preferences → Re-authenticate**
+- Terminal: `python3 main.py --setup`
+
+### Method 2: Safari Cookie Bridge (For Arc Users)
+
+Arc browser's encryption prevents automatic cookie extraction. Use this workaround:
+
+1. **Open Safari** and log into [claude.ai](https://claude.ai)
+2. Run: `python3 main.py --setup`
+3. The app will extract cookies from Safari automatically
+4. **Close Safari** and return to using Arc
+5. Cookies are saved to Keychain and work regardless of which browser you use
+
+**Why this works:** Cookies are stored in Keychain, not tied to a specific browser. Once extracted from Safari, they work even if you only use Arc.
+
+### Method 3: Terminal-Only Setup (No Browser)
+
+For headless systems or automation:
+
+```bash
+python3 main.py --setup --cli
+```
+
+Follow the prompts to paste your cookie directly in the terminal.
+
+### Method 4: Direct Keychain Entry (Advanced)
+
+If you already have your cookie string:
+
+```bash
+python3 -c "import keyring; keyring.set_password('pangolin-claude-monitor', 'session_cookie', 'YOUR_COOKIE_STRING')"
+```
+
+---
+
+**Security Notes:**
+- Cookies are validated against claude.ai before being saved
+- Stored securely in macOS Keychain (never written to disk)
+- Cookies typically remain valid for weeks/months
+- Re-authenticate when you see "Authentication failed" errors
+
+### Re-authentication
+
+**When to re-authenticate:**
+- "Authentication failed" or "No data available" errors
+- After changing your Claude password
+- If you log out of claude.ai
+
+**How to re-authenticate:**
+- **From menu bar:** Preferences → Re-authenticate
+- **From terminal:** `python3 main.py --setup`
+- **CLI only:** `python3 main.py --setup --cli`
 
 ## Configuration
 
@@ -120,18 +172,39 @@ claude-usage-monitor/
 
 ## Browser Compatibility
 
-**✅ Tested and Working:**
-- **Safari** - Recommended for best compatibility
+| Browser | Automatic Extraction | Recommended Setup Method |
+|---------|---------------------|--------------------------|
+| **Safari** ✅ | Yes | Method 1 (Browser Wizard) or Method 2 |
+| **Arc** ⚠️ | No (encrypted cookies) | Method 2 (Safari Bridge) - See below |
+| **Chrome** ⚠️ | Partial (if installed) | Method 1 (Browser Wizard) |
+| **Firefox** ⚠️ | Partial | Method 1 (Browser Wizard) |
+| **Brave/Edge** ⚠️ | Partial | Method 1 (Browser Wizard) |
 
-**⚠️ Known Issues:**
-- **Arc Browser** - Automatic cookie extraction doesn't work due to encryption. Use Safari to log in once for setup, then you can continue using Arc for normal browsing.
-- **Chrome** - Should work if installed, but not extensively tested
+### Arc Users: Safari Bridge Setup
 
-**Recommended Setup Flow for Arc Users:**
-1. Open Safari and log into [claude.ai](https://claude.ai)
-2. Run `python3 main.py --setup` to extract cookies from Safari
-3. Close Safari and return to using Arc for normal browsing
-4. The app will continue working with the saved Safari cookies
+Arc's cookie encryption prevents direct extraction. Use this one-time setup:
+
+```bash
+# 1. Open Safari, log into claude.ai
+# 2. Run setup (extracts from Safari automatically)
+python3 main.py --setup
+
+# 3. Close Safari, return to Arc
+# ✓ App now works with saved cookies
+```
+
+**Why this works:** Cookies are stored in Keychain after extraction, independent of which browser you currently use. Safari is only needed once for the initial setup.
+
+### Troubleshooting Authentication
+
+**"No cookies found" during setup:**
+- Make sure you're logged into claude.ai in the browser
+- Try Method 1 (manual copy-paste) instead
+- For Arc: Use Method 2 (Safari Bridge)
+
+**"Authentication failed" after setup:**
+- Cookie may have expired - re-authenticate
+- Try: `python3 main.py --setup`
 
 ## Troubleshooting
 
