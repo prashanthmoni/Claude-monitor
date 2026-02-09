@@ -26,3 +26,10 @@ env/
 *.log
 *.log.*
 .claude_usage_cache.json
+
+# Debug/test files
+debug_*.py
+test_*.py
+decrypt_*.py
+inspect_*.py
+manual_*.py
