@@ -118,6 +118,21 @@ claude-usage-monitor/
 └── README.md            # This file
 ```
 
+## Browser Compatibility
+
+**✅ Tested and Working:**
+- **Safari** - Recommended for best compatibility
+
+**⚠️ Known Issues:**
+- **Arc Browser** - Automatic cookie extraction doesn't work due to encryption. Use Safari to log in once for setup, then you can continue using Arc for normal browsing.
+- **Chrome** - Should work if installed, but not extensively tested
+
+**Recommended Setup Flow for Arc Users:**
+1. Open Safari and log into [claude.ai](https://claude.ai)
+2. Run `python3 main.py --setup` to extract cookies from Safari
+3. Close Safari and return to using Arc for normal browsing
+4. The app will continue working with the saved Safari cookies
+
 ## Troubleshooting
 
 ### "Authentication failed" or "No data available"

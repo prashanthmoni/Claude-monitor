@@ -86,20 +86,21 @@ class PangolinApp(rumps.App):
         )
 
         # ── Build Menu Items ──
-        self.header_item = rumps.MenuItem(f"{config.APP_ICON} Pangolin")
+        # Use lambda: None to make items non-greyed (clickable but do nothing)
+        self.header_item = rumps.MenuItem(f"{config.APP_ICON} Pangolin", callback=lambda _: None)
         self.separator1 = rumps.separator
 
-        self.overall_item = rumps.MenuItem("Overall: —")
+        self.overall_item = rumps.MenuItem("Overall: —", callback=lambda _: None)
         self.separator2 = rumps.separator
 
-        self.web_header = rumps.MenuItem("claude.ai")
-        self.web_messages = rumps.MenuItem("  Messages: —")
-        self.web_reset = rumps.MenuItem("  Resets in: —")
+        self.web_header = rumps.MenuItem("claude.ai", callback=lambda _: None)
+        self.web_messages = rumps.MenuItem("  Messages: —", callback=lambda _: None)
+        self.web_reset = rumps.MenuItem("  Resets in: —", callback=lambda _: None)
         self.separator3 = rumps.separator
 
-        self.cli_header = rumps.MenuItem("Claude Code CLI")
-        self.cli_status = rumps.MenuItem("  Status: —")
-        self.cli_last = rumps.MenuItem("  Last used: —")
+        self.cli_header = rumps.MenuItem("Claude Code CLI", callback=lambda _: None)
+        self.cli_status = rumps.MenuItem("  Status: —", callback=lambda _: None)
+        self.cli_last = rumps.MenuItem("  Last used: —", callback=lambda _: None)
         self.separator4 = rumps.separator
 
         self.refresh_item = rumps.MenuItem(
@@ -107,13 +108,15 @@ class PangolinApp(rumps.App):
         )
 
         # Preferences sub-menu
-        self.prefs_menu = rumps.MenuItem("⚙️ Preferences...")
+        self.prefs_menu = rumps.MenuItem("⚙️ Preferences...", callback=lambda _: None)
         self.prefs_interval = rumps.MenuItem(
             f"  Refresh Interval: {config.REFRESH_INTERVAL // 60}m",
+            callback=lambda _: None
         )
         self.prefs_alerts = rumps.MenuItem(
             f"  Warning: {int(config.WARNING_THRESHOLD * 100)}% / "
             f"Critical: {int(config.CRITICAL_THRESHOLD * 100)}%",
+            callback=lambda _: None
         )
         self.prefs_reauth = rumps.MenuItem(
             "  Re-authenticate", callback=self.on_reauth_clicked
