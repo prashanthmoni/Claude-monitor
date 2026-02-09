@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Claude Usage Monitor — macOS Menu Bar Application.
+Pangolin — macOS Menu Bar Claude Usage Monitor.
 
 A lightweight menu bar widget that shows real-time Claude Pro usage
 (claude.ai messages + Claude Code CLI activity) with color-coded
@@ -66,7 +66,7 @@ def run_setup(cli_only: bool = False) -> bool:
 # ─── Menu Bar Application ───────────────────────────────────────────
 
 
-class ClaudeMonitorApp(rumps.App):
+class PangolinApp(rumps.App):
     """Main menu bar application.
 
     Lifecycle:
@@ -81,12 +81,12 @@ class ClaudeMonitorApp(rumps.App):
         # Start with a generic title; updated after first data fetch.
         super().__init__(
             name=config.APP_NAME,
-            title="C ⏳",
+            title=f"{config.APP_ICON} ...",
             quit_button=None,  # We add a custom Quit below.
         )
 
         # ── Build Menu Items ──
-        self.header_item = rumps.MenuItem("Claude Usage Monitor")
+        self.header_item = rumps.MenuItem(f"{config.APP_ICON} Pangolin")
         self.separator1 = rumps.separator
 
         self.overall_item = rumps.MenuItem("Overall: —")
@@ -215,7 +215,7 @@ class ClaudeMonitorApp(rumps.App):
         # ── Title & Color ──
         pct_display = int(overall_pct * 100)
         icon = self._color_icon(overall_pct)
-        self.title = f"{icon} {pct_display}%"
+        self.title = f"{icon} {config.APP_ICON} {pct_display}%"
 
         # ── Overall ──
         alert_symbol = ""
@@ -282,7 +282,7 @@ class ClaudeMonitorApp(rumps.App):
 
         if pct >= config.CRITICAL_THRESHOLD and not self._alerted_critical:
             rumps.notification(
-                title="🔴 Claude Usage Critical!",
+                title=f"🔴 {config.APP_ICON} Usage Critical!",
                 subtitle=f"Only {remaining} messages left.",
                 message=f"Resets in {reset_str}.",
             )
@@ -292,7 +292,7 @@ class ClaudeMonitorApp(rumps.App):
 
         elif pct >= config.WARNING_THRESHOLD and not self._alerted_warning:
             rumps.notification(
-                title="⚠️ Claude Usage at 80%",
+                title=f"⚠️ {config.APP_ICON} Usage at 80%",
                 subtitle=f"You have {remaining} messages remaining.",
                 message=f"Resets in {reset_str}.",
             )
@@ -402,7 +402,7 @@ def main() -> None:
             sys.exit(1)
 
     logger.info("Starting %s", config.APP_NAME)
-    app = ClaudeMonitorApp()
+    app = PangolinApp()
     app.run()
 
 

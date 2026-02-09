@@ -1,5 +1,5 @@
 """
-Setup Wizard for Claude Usage Monitor.
+Setup Wizard for Pangolin — Claude Usage Monitor.
 
 Provides a user-friendly, browser-based setup experience:
 
@@ -146,7 +146,7 @@ def _build_html() -> str:
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Claude Monitor Setup</title>
+<title>Pangolin Setup</title>
 <style>
   :root {{
     --bg: #faf9f7;
@@ -369,8 +369,8 @@ def _build_html() -> str:
 </head>
 <body>
 <div class="container">
-  <div class="logo">&#x1F4CA;</div>
-  <h1>Claude Usage Monitor</h1>
+  <div class="logo">&#x1F98E;</div>
+  <h1>Pangolin</h1>
   <p class="subtitle">Let's connect to your Claude account. This takes about 30 seconds.</p>
 
   <!-- ── Setup Cards ── -->
@@ -437,7 +437,7 @@ def _build_html() -> str:
     <h2>You're all set!</h2>
     <p id="done-account"></p>
     <p style="margin-top:16px;">
-      The Claude Monitor is now running in your menu bar.<br>
+      Pangolin is now running in your menu bar.<br>
       You can close this page.
     </p>
   </div>
@@ -651,7 +651,7 @@ def run_setup_wizard() -> bool:
 
     print()
     print("  ╔══════════════════════════════════════════════════════════╗")
-    print("  ║         Claude Monitor — Setup Wizard                   ║")
+    print("  ║         \U0001f98e Pangolin — Setup Wizard                      ║")
     print("  ╠══════════════════════════════════════════════════════════╣")
     print(f"  ║  Opening your browser to: {url:<28s} ║")
     print("  ║                                                          ║")
@@ -692,7 +692,7 @@ def run_cli_setup() -> bool:
     """
     print()
     print("  ╔══════════════════════════════════════════════════════════╗")
-    print("  ║         Claude Monitor — Setup (Terminal Mode)          ║")
+    print("  ║         \U0001f98e Pangolin — Setup (Terminal Mode)             ║")
     print("  ╠══════════════════════════════════════════════════════════╣")
     print("  ║                                                          ║")
     print("  ║  Step 1: Open https://claude.ai and log in              ║")

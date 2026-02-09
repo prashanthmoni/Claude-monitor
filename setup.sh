@@ -1,16 +1,16 @@
 #!/bin/bash
 # ──────────────────────────────────────────────────────────────────────
-# Claude Usage Monitor — Installation Script
+# Pangolin — Claude Usage Monitor — Installation Script
 # ──────────────────────────────────────────────────────────────────────
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PLIST_NAME="com.claude.usage-monitor"
+PLIST_NAME="com.pangolin.claude-monitor"
 PLIST_DIR="$HOME/Library/LaunchAgents"
 PLIST_PATH="$PLIST_DIR/$PLIST_NAME.plist"
 
 echo "╔══════════════════════════════════════════════════════╗"
-echo "║        Claude Usage Monitor — Setup                  ║"
+echo "║        🦎 Pangolin — Setup                           ║"
 echo "╚══════════════════════════════════════════════════════╝"
 echo ""
 

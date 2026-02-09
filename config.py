@@ -1,5 +1,5 @@
 """
-Configuration for Claude Usage Monitor.
+Configuration for Pangolin — Claude Usage Monitor.
 
 All user-editable settings are defined here. Modify values below
 to customize refresh intervals, alert thresholds, and file paths.
@@ -49,7 +49,7 @@ CLI_ACTIVE_WINDOW: int = 30 * 60  # 30 minutes
 
 # ─── Keychain / Credentials ─────────────────────────────────────────
 # Service name stored in macOS Keychain via the `keyring` library.
-KEYCHAIN_SERVICE: str = "claude-usage-monitor"
+KEYCHAIN_SERVICE: str = "pangolin-claude-monitor"
 KEYCHAIN_USERNAME: str = "session_cookie"
 
 # ─── Network / Retry ────────────────────────────────────────────────
@@ -59,7 +59,8 @@ MAX_RETRIES: int = 3
 RETRY_BASE_DELAY: float = 2.0
 
 # ─── UI Strings ──────────────────────────────────────────────────────
-APP_NAME: str = "Claude Monitor"
+APP_NAME: str = "Pangolin"
+APP_ICON: str = "\U0001f98e"  # 🦎 — closest scaly-animal emoji (no pangolin in Unicode yet)
 APP_ICON_GREEN: str = "🟢"
 APP_ICON_YELLOW: str = "🟡"
 APP_ICON_RED: str = "🔴"

@@ -1,8 +1,8 @@
-# Claude Usage Monitor
+# Pangolin
 
 A lightweight macOS menu bar application that monitors your Claude Pro usage across **claude.ai** and **Claude Code CLI**. Displays real-time usage percentages with color-coded indicators and sends system notifications when you approach your limits.
 
-Designed for minimal resource usage (~30–50 MB RAM) — works well on older Intel MacBooks.
+Named after the pangolin — small, armored, and always keeping watch. Designed for minimal resource usage (~30-50 MB RAM) — works well on older Intel MacBooks.
 
 ## Features
 
@@ -84,7 +84,7 @@ REFRESH_INTERVAL = 5 * 60  # 300 seconds
 ## Menu Bar Layout
 
 ```
-Claude Usage Monitor
+🦎 Pangolin
 ━━━━━━━━━━━━━━━━━━━━
 📊 Overall: 75% ⚠️
 
@@ -141,16 +141,16 @@ claude-usage-monitor/
 
 ### Removing auto-launch
 ```bash
-launchctl unload ~/Library/LaunchAgents/com.claude.usage-monitor.plist
-rm ~/Library/LaunchAgents/com.claude.usage-monitor.plist
+launchctl unload ~/Library/LaunchAgents/com.pangolin.claude-monitor.plist
+rm ~/Library/LaunchAgents/com.pangolin.claude-monitor.plist
 ```
 
 ## Uninstall
 
 ```bash
 # 1. Remove auto-launch (if configured)
-launchctl unload ~/Library/LaunchAgents/com.claude.usage-monitor.plist 2>/dev/null
-rm -f ~/Library/LaunchAgents/com.claude.usage-monitor.plist
+launchctl unload ~/Library/LaunchAgents/com.pangolin.claude-monitor.plist 2>/dev/null
+rm -f ~/Library/LaunchAgents/com.pangolin.claude-monitor.plist
 
 # 2. Remove cached data and logs
 rm -f ~/.claude_usage_cache.json
@@ -158,7 +158,7 @@ rm -f ~/.claude_usage_monitor.log
 rm -f ~/.claude_usage_monitor.log.1
 
 # 3. Remove Keychain entry
-python3 -c "import keyring; keyring.delete_password('claude-usage-monitor', 'session_cookie')"
+python3 -c "import keyring; keyring.delete_password('pangolin-claude-monitor', 'session_cookie')"
 
 # 4. Remove the project directory
 rm -rf /path/to/claude-usage-monitor

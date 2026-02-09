@@ -1,5 +1,5 @@
 """
-Usage data fetching and aggregation for Claude Usage Monitor.
+Usage data fetching and aggregation for Pangolin.
 
 This module handles:
   - Scraping claude.ai web dashboard for message counts and reset times
