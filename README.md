@@ -41,20 +41,25 @@ python3 main.py
 
 ## First-Time Authentication
 
-On first launch, the app will prompt you to paste your **claude.ai session cookie**:
+On first launch, a **setup wizard** opens in your browser with two options:
 
-1. Open [https://claude.ai](https://claude.ai) in your browser and log in.
-2. Open **DevTools** (`Cmd + Option + I`) → **Application** tab.
-3. Under **Cookies** → `https://claude.ai`, copy the full cookie string (all `name=value` pairs).
-4. Paste it into the terminal prompt.
+### Option A: One-Click Bookmarklet (easiest)
+1. Drag the **"Get Claude Cookie"** button to your Bookmarks Bar.
+2. Go to [claude.ai](https://claude.ai) and make sure you're logged in.
+3. Click the bookmarklet. Done — the cookie is sent and validated automatically.
 
-The cookie is stored securely in your macOS Keychain (service: `claude-usage-monitor`). It is **never** written to disk or logged.
+### Option B: Paste Manually
+1. Go to [claude.ai](https://claude.ai) and log in.
+2. Open DevTools (`Cmd + Option + I`) → **Console** tab.
+3. Type `copy(document.cookie)` and press Enter — this copies cookies to your clipboard.
+4. Paste into the setup page's text box and click **Validate & Save**.
 
-To re-authenticate later, use the menu: **⚙️ Preferences → Re-authenticate**, or run:
+The cookie is validated against claude.ai immediately, then stored securely in your macOS Keychain. It is **never** written to disk or logged.
 
-```bash
-python3 main.py --setup
-```
+### Re-authenticate later
+- From the menu bar: **Preferences → Re-authenticate** (opens the browser wizard)
+- From the terminal: `python3 main.py --setup`
+- Terminal-only mode (no browser): `python3 main.py --setup --cli`
 
 ## Configuration
 
@@ -104,6 +109,7 @@ Claude Code CLI
 ```
 claude-usage-monitor/
 ├── main.py              # Menu bar app, UI logic, entry point
+├── setup_wizard.py      # Browser-based setup wizard with bookmarklet
 ├── usage_tracker.py     # Usage data fetching, parsing, caching
 ├── config.py            # All user-editable configuration
 ├── requirements.txt     # Python dependencies

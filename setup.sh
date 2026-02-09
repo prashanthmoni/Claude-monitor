@@ -29,7 +29,10 @@ echo "Installing Python dependencies..."
 pip3 install -r "$SCRIPT_DIR/requirements.txt"
 echo "✓ Dependencies installed"
 
-# ── 3. Run credential setup ─────────────────────────────────────────
+# ── 3. Run credential setup (browser-based wizard) ──────────────────
+echo ""
+echo "Opening setup wizard in your browser..."
+echo "(If the browser doesn't open, visit http://localhost:17834)"
 echo ""
 python3 "$SCRIPT_DIR/main.py" --setup
 

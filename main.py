@@ -11,7 +11,8 @@ footprint (~30-50 MB RSS).
 
 Usage:
     python3 main.py             # Normal launch
-    python3 main.py --setup     # Re-enter credentials
+    python3 main.py --setup     # Browser-based setup wizard
+    python3 main.py --setup --cli  # Terminal-only setup
 """
 
 import argparse
@@ -28,6 +29,7 @@ from typing import Any, Dict, Optional
 import rumps
 
 import config
+import setup_wizard
 import usage_tracker
 
 # ─── Logging Setup ───────────────────────────────────────────────────
@@ -48,45 +50,17 @@ logging.basicConfig(level=logging.INFO, handlers=[_file_handler])
 logger = logging.getLogger(__name__)
 
 
-# ─── Credential Prompt ───────────────────────────────────────────────
+# ─── Credential Setup ────────────────────────────────────────────────
 
 
-def prompt_for_credentials() -> bool:
-    """Interactive prompt that asks the user to paste their session cookie.
+def run_setup(cli_only: bool = False) -> bool:
+    """Run the setup wizard (browser-based or CLI fallback).
 
-    The cookie is stored securely in macOS Keychain. Returns True on
-    success, False if the user cancels or storage fails.
+    Returns True if credentials were saved successfully.
     """
-    print("\n╔══════════════════════════════════════════════════════╗")
-    print("║       Claude Usage Monitor — First-Time Setup       ║")
-    print("╠══════════════════════════════════════════════════════╣")
-    print("║ To monitor your Claude usage, the app needs your    ║")
-    print("║ claude.ai session cookie.                           ║")
-    print("║                                                     ║")
-    print("║ How to get it:                                      ║")
-    print("║  1. Open https://claude.ai in your browser          ║")
-    print("║  2. Open DevTools (Cmd+Option+I) → Application tab  ║")
-    print("║  3. Under Cookies → https://claude.ai, copy the     ║")
-    print("║     full cookie string (all name=value pairs)       ║")
-    print("║  4. Paste it below                                  ║")
-    print("╚══════════════════════════════════════════════════════╝\n")
-
-    try:
-        cookie = input("Session cookie (paste and press Enter): ").strip()
-    except (EOFError, KeyboardInterrupt):
-        print("\nSetup cancelled.")
-        return False
-
-    if not cookie:
-        print("No cookie provided — setup cancelled.")
-        return False
-
-    if usage_tracker.store_session_cookie(cookie):
-        print("Cookie stored securely in macOS Keychain.")
-        return True
-    else:
-        print("ERROR: Failed to store cookie. Check Keychain access.")
-        return False
+    if cli_only:
+        return setup_wizard.run_cli_setup()
+    return setup_wizard.run_setup_wizard()
 
 
 # ─── Menu Bar Application ───────────────────────────────────────────
@@ -349,15 +323,14 @@ class ClaudeMonitorApp(rumps.App):
         self._start_background_fetch()
 
     def on_reauth_clicked(self, _sender: Any = None) -> None:
-        """Open a terminal window to re-enter credentials.
+        """Launch the browser-based setup wizard in a background thread.
 
-        Since rumps doesn't support inline text input, we open a new
-        Terminal window running this script with ``--setup``.
+        Opens the user's default browser to a friendly local setup page
+        where they can re-authenticate using the bookmarklet or paste flow.
         """
-        os.system(
-            f'osascript -e \'tell application "Terminal" to do script '
-            f'"python3 {os.path.abspath(__file__)} --setup"\''
-        )
+        threading.Thread(
+            target=setup_wizard.run_setup_wizard, daemon=True
+        ).start()
 
     def on_quit(self, _sender: Any = None) -> None:
         """Clean up and exit."""
@@ -407,19 +380,24 @@ def main() -> None:
     parser.add_argument(
         "--setup",
         action="store_true",
-        help="Run credential setup wizard",
+        help="Run the setup wizard (opens browser-based guide)",
+    )
+    parser.add_argument(
+        "--cli",
+        action="store_true",
+        help="Use terminal-only setup instead of browser wizard",
     )
     args = parser.parse_args()
 
     if args.setup:
-        prompt_for_credentials()
+        run_setup(cli_only=args.cli)
         return
 
     # On first run, check whether credentials exist.
     cookie = usage_tracker.get_session_cookie()
     if not cookie:
         print("No credentials found. Starting setup wizard...")
-        if not prompt_for_credentials():
+        if not run_setup(cli_only=args.cli):
             print("Setup incomplete — exiting.")
             sys.exit(1)
 
