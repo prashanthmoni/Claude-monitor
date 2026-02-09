@@ -16,7 +16,13 @@ import time
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Tuple
 
-import requests
+try:
+    from curl_cffi import requests
+    USING_CURL_CFFI = True
+except ImportError:
+    import requests
+    USING_CURL_CFFI = False
+
 from bs4 import BeautifulSoup
 from dateutil import parser as dateutil_parser
 
@@ -111,15 +117,27 @@ def _request_with_retry(
     Retries up to ``config.MAX_RETRIES`` times. Delay doubles each
     attempt starting from ``config.RETRY_BASE_DELAY`` seconds.
 
+    Uses curl_cffi for browser impersonation to bypass Cloudflare if available.
+
     Returns the Response on success, or None after all retries fail.
     """
     delay = config.RETRY_BASE_DELAY
     for attempt in range(1, config.MAX_RETRIES + 1):
         try:
-            resp = session.get(url, timeout=30)
+            if USING_CURL_CFFI:
+                # Use curl_cffi with browser impersonation to bypass Cloudflare
+                resp = requests.get(
+                    url,
+                    headers=dict(session.headers),
+                    impersonate="chrome110",
+                    timeout=30
+                )
+            else:
+                resp = session.get(url, timeout=30)
+
             resp.raise_for_status()
             return resp
-        except requests.RequestException as exc:
+        except Exception as exc:
             logger.warning(
                 "Request attempt %d/%d failed: %s",
                 attempt, config.MAX_RETRIES, exc,
@@ -230,7 +248,7 @@ def _extract_from_json_blob(script_text: str, result: Dict[str, Any]) -> None:
 def fetch_claude_web_usage(
     session_cookie: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Fetch usage data from the claude.ai web dashboard.
+    """Fetch usage data from the claude.ai API.
 
     Args:
         session_cookie: Optional override. When None, reads from Keychain.
@@ -253,38 +271,64 @@ def fetch_claude_web_usage(
 
     session = _build_session(cookie)
 
-    # Try the main settings/usage page first, then fall back to the
-    # dashboard root.
-    urls_to_try = [
-        f"{config.CLAUDE_WEB_BASE_URL}/settings",
-        f"{config.CLAUDE_WEB_BASE_URL}/api/organizations",
-        config.CLAUDE_WEB_BASE_URL,
-    ]
+    # Step 1: Get organization UUID from account endpoint
+    account_url = f"{config.CLAUDE_WEB_BASE_URL}/api/account"
+    account_resp = _request_with_retry(session, account_url)
 
-    for url in urls_to_try:
-        resp = _request_with_retry(session, url)
-        if resp is None:
-            continue
+    if account_resp is None:
+        logger.warning("Could not fetch account data")
+        return empty
 
-        # If we got JSON back (e.g. from an API endpoint), try parsing it
-        # directly before falling through to HTML parsing.
-        content_type = resp.headers.get("Content-Type", "")
-        if "json" in content_type:
-            try:
-                data = resp.json()
-                parsed = _parse_api_json(data)
-                if parsed["messages_used"] is not None:
-                    return parsed
-            except (json.JSONDecodeError, ValueError):
-                pass
+    try:
+        account_data = account_resp.json()
+        memberships = account_data.get("memberships", [])
 
-        # HTML parsing path
-        parsed = _parse_usage_from_html(resp.text)
-        if parsed["messages_used"] is not None:
-            return parsed
+        if not memberships:
+            logger.warning("No organization memberships found")
+            return empty
 
-    logger.warning("Could not extract usage data from any endpoint")
-    return empty
+        org_uuid = memberships[0]["organization"]["uuid"]
+        logger.debug(f"Found organization UUID: {org_uuid}")
+
+    except (json.JSONDecodeError, KeyError, IndexError) as e:
+        logger.error(f"Failed to parse account data: {e}")
+        return empty
+
+    # Step 2: Get usage data from organization usage endpoint
+    usage_url = f"{config.CLAUDE_WEB_BASE_URL}/api/organizations/{org_uuid}/usage"
+    usage_resp = _request_with_retry(session, usage_url)
+
+    if usage_resp is None:
+        logger.warning("Could not fetch usage data")
+        return empty
+
+    try:
+        usage_data = usage_resp.json()
+
+        # Use 5-hour window as primary metric (more granular)
+        five_hour = usage_data.get("five_hour", {})
+        utilization = five_hour.get("utilization", 0.0)
+        resets_at = five_hour.get("resets_at")
+
+        # Convert utilization percentage to used/limit
+        # Assuming 100 = limit for calculation purposes
+        percentage = utilization / 100.0
+        messages_used = int(utilization)
+        messages_limit = 100
+
+        result = {
+            "messages_used": messages_used,
+            "messages_limit": messages_limit,
+            "reset_time": resets_at,
+            "percentage": percentage,
+        }
+
+        logger.info(f"Usage: {utilization}% (resets at {resets_at})")
+        return result
+
+    except (json.JSONDecodeError, KeyError) as e:
+        logger.error(f"Failed to parse usage data: {e}")
+        return empty
 
 
 def _parse_api_json(data: Any) -> Dict[str, Any]:

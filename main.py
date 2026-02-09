@@ -177,9 +177,8 @@ class PangolinApp(rumps.App):
     def _do_fetch(self) -> None:
         """Network-bound work that runs on a background thread.
 
-        After fetching, schedules a UI update on the main thread by
-        writing to the shared snapshot and setting a short Timer to
-        trigger ``_apply_snapshot``.
+        After fetching, updates the UI directly. rumps handles thread safety
+        for simple property updates.
         """
         try:
             snapshot = usage_tracker.refresh_usage_data()
@@ -188,23 +187,21 @@ class PangolinApp(rumps.App):
                 "Usage data refreshed — overall %.1f%%",
                 snapshot.get("overall_percentage", 0) * 100,
             )
+
+            # Update UI directly from background thread
+            # rumps should handle thread safety for property updates
+            self._update_ui_from_snapshot(snapshot)
+
         except Exception:
             logger.exception("Background fetch failed")
         finally:
             self._fetch_in_progress = False
-            # Schedule a one-shot timer to update UI on main thread.
-            rumps.Timer(self._apply_snapshot, 0.1).start()
 
-    def _apply_snapshot(self, _sender: Any = None) -> None:
-        """Update all menu items from ``_latest_snapshot``.
+    def _update_ui_from_snapshot(self, snap: Dict[str, Any]) -> None:
+        """Update all menu items from a snapshot.
 
-        Must run on the main thread (called via rumps.Timer one-shot).
+        Can be called from any thread - rumps handles thread safety.
         """
-        # Stop the one-shot timer immediately.
-        if _sender is not None:
-            _sender.stop()
-
-        snap = self._latest_snapshot
         if not snap:
             return
 
