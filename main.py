@@ -90,11 +90,11 @@ class PangolinApp(rumps.App):
         self.header_item = rumps.MenuItem(f"{config.APP_ICON} Pangolin", callback=lambda _: None)
         self.separator1 = rumps.separator
 
-        self.overall_item = rumps.MenuItem("Overall: —", callback=lambda _: None)
+        self.overall_item = rumps.MenuItem("📊 Overall: —", callback=self.on_show_details)
         self.separator2 = rumps.separator
 
-        self.web_header = rumps.MenuItem("claude.ai", callback=lambda _: None)
-        self.web_messages = rumps.MenuItem("  Messages: —", callback=lambda _: None)
+        self.web_header = rumps.MenuItem("🌐 claude.ai", callback=self.on_open_claude_ai)
+        self.web_messages = rumps.MenuItem("  📋 Messages: —", callback=self.on_copy_stats)
         self.web_reset = rumps.MenuItem("  Resets in: —", callback=lambda _: None)
         self.separator3 = rumps.separator
 
@@ -121,10 +121,14 @@ class PangolinApp(rumps.App):
         self.prefs_reauth = rumps.MenuItem(
             "  Re-authenticate", callback=self.on_reauth_clicked
         )
+        self.prefs_copy_cookie = rumps.MenuItem(
+            "  Copy Cookie (Debug)", callback=self.on_copy_cookie
+        )
         self.prefs_menu.update([
             self.prefs_interval,
             self.prefs_alerts,
             self.prefs_reauth,
+            self.prefs_copy_cookie,
         ])
 
         self.quit_item = rumps.MenuItem("❌ Quit", callback=self.on_quit)
@@ -315,6 +319,158 @@ class PangolinApp(rumps.App):
             logger.exception("Failed to save alert timestamp")
 
     # ── Menu Callbacks ───────────────────────────────────────────────
+
+    def on_open_claude_ai(self, _sender: Any = None) -> None:
+        """Open claude.ai in the default browser."""
+        import subprocess
+        try:
+            subprocess.run(["open", config.CLAUDE_WEB_BASE_URL], check=True)
+            logger.info("Opened claude.ai in browser")
+        except subprocess.CalledProcessError:
+            logger.exception("Failed to open browser")
+
+    def on_show_details(self, _sender: Any = None) -> None:
+        """Show detailed usage breakdown in a dialog window."""
+        snap = self._latest_snapshot
+        if not snap:
+            rumps.alert(
+                title="No Data Available",
+                message="Usage data hasn't been fetched yet. Try refreshing."
+            )
+            return
+
+        overall_pct = snap.get("overall_percentage", 0)
+        web = snap.get("claude_web", {})
+        cli = snap.get("claude_code", {})
+
+        # Format the detailed message
+        used = web.get("messages_used", "?")
+        limit = web.get("messages_limit", "?")
+        reset_time = web.get("reset_time", "Unknown")
+        cli_status = cli.get("status", "unknown")
+        cli_last = cli.get("last_activity", "Never")
+
+        reset_dt = usage_tracker.parse_reset_time(reset_time)
+        reset_str = usage_tracker.time_until_reset(reset_dt) if reset_dt else "Unknown"
+
+        message = (
+            f"Overall Usage: {int(overall_pct * 100)}%\n\n"
+            f"Web Messages:\n"
+            f"  Used: {used}/{limit}\n"
+            f"  Resets: {reset_str}\n\n"
+            f"Claude Code CLI:\n"
+            f"  Status: {cli_status.capitalize()}\n"
+            f"  Last Activity: {self._relative_time(cli_last) if cli_last != 'Never' else 'Never'}\n\n"
+            f"Last Updated: {snap.get('timestamp', 'Unknown')[:19]}"
+        )
+
+        rumps.alert(
+            title=f"{config.APP_ICON} Pangolin Usage Details",
+            message=message,
+            ok="Close"
+        )
+        logger.info("Displayed usage details dialog")
+
+    def on_copy_stats(self, _sender: Any = None) -> None:
+        """Copy usage statistics to clipboard."""
+        import subprocess
+
+        snap = self._latest_snapshot
+        if not snap:
+            rumps.notification(
+                title="No Data",
+                message="No usage data available to copy.",
+            )
+            return
+
+        overall_pct = snap.get("overall_percentage", 0)
+        web = snap.get("claude_web", {})
+        cli = snap.get("claude_code", {})
+
+        used = web.get("messages_used", "?")
+        limit = web.get("messages_limit", "?")
+        reset_dt = usage_tracker.parse_reset_time(web.get("reset_time"))
+        reset_str = usage_tracker.time_until_reset(reset_dt) if reset_dt else "Unknown"
+        cli_status = cli.get("status", "unknown")
+
+        # Format clipboard text
+        stats_text = (
+            f"Claude Usage Report\n"
+            f"{'=' * 40}\n"
+            f"Overall: {int(overall_pct * 100)}%\n"
+            f"Messages: {used}/{limit}\n"
+            f"Resets in: {reset_str}\n"
+            f"CLI Status: {cli_status.capitalize()}\n"
+            f"Timestamp: {snap.get('timestamp', 'Unknown')[:19]}\n"
+        )
+
+        try:
+            # Use pbcopy to copy to clipboard
+            process = subprocess.Popen(
+                ["pbcopy"],
+                stdin=subprocess.PIPE,
+                text=True
+            )
+            process.communicate(input=stats_text)
+
+            rumps.notification(
+                title=f"{config.APP_ICON} Stats Copied",
+                subtitle="",
+                message="Usage statistics copied to clipboard.",
+            )
+            logger.info("Copied usage stats to clipboard")
+        except Exception:
+            logger.exception("Failed to copy to clipboard")
+            rumps.notification(
+                title="Copy Failed",
+                subtitle="",
+                message="Could not copy stats to clipboard.",
+            )
+
+    def on_copy_cookie(self, _sender: Any = None) -> None:
+        """Copy session cookie to clipboard (for debugging)."""
+        import subprocess
+
+        # Confirm action first
+        response = rumps.alert(
+            title="Copy Cookie?",
+            message="This will copy your session cookie to the clipboard. "
+                    "Only share this with trusted support channels.",
+            ok="Copy",
+            cancel="Cancel"
+        )
+
+        if response != 1:  # User cancelled
+            return
+
+        cookie = usage_tracker.get_session_cookie()
+        if not cookie:
+            rumps.notification(
+                title="No Cookie",
+                message="No session cookie found in Keychain.",
+            )
+            return
+
+        try:
+            # Copy full cookie to clipboard
+            process = subprocess.Popen(
+                ["pbcopy"],
+                stdin=subprocess.PIPE,
+                text=True
+            )
+            process.communicate(input=cookie)
+
+            rumps.notification(
+                title="Cookie Copied",
+                message="Session cookie copied to clipboard.",
+            )
+            logger.info("Copied session cookie to clipboard")
+        except Exception:
+            logger.exception("Failed to copy cookie to clipboard")
+            rumps.notification(
+                title="Copy Failed",
+                message="Could not copy cookie to clipboard.",
+            )
 
     @rumps.clicked("🔄 Refresh Now")
     def on_refresh_clicked(self, _sender: Any = None) -> None:
